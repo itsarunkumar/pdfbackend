@@ -52,8 +52,34 @@ exports.listAllFiles = async (req, res) => {
     return `${appwriteEndpoint}/storage/buckets/${appwriteStorageBucketId}/files/${file.$id}/view?project=${appwriteProjectId}`;
   });
 
-  res.status(200).json({
-    result,
-    links,
+  const files = result.files.map((file) => {
+    return {
+      id: file.$id,
+      name: file.name,
+      size: file.sizeOriginal,
+      url: `${appwriteEndpoint}/storage/buckets/${appwriteStorageBucketId}/files/${file.$id}/view?project=${appwriteProjectId}`,
+      type: file.mimeType,
+    };
   });
+
+  res.status(200).json({
+    length: files.length,
+    files,
+  });
+};
+
+exports.getSingleFile = async (req, res) => {
+  const { id } = req.params;
+
+  const result = await storage.getFile(appwriteStorageBucketId, id);
+
+  const file = {
+    id: result.$id,
+    name: result.name,
+    size: result.sizeOriginal,
+    url: `${appwriteEndpoint}/storage/buckets/${appwriteStorageBucketId}/files/${result.$id}/view?project=${appwriteProjectId}`,
+    type: result.mimeType,
+  };
+
+  res.status(200).json(file);
 };

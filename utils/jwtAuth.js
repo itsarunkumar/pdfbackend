@@ -7,9 +7,6 @@ const authenticateToken = (req, res, next) => {
   token = token.replace("Bearer ", "");
 
   token.trim();
-
-  // console.log("Token:", token);
-
   try {
     if (!token) {
       return res
@@ -19,8 +16,6 @@ const authenticateToken = (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.userId = decoded;
-
-    // console.log("Decoded:", decoded);
 
     next();
   } catch (error) {

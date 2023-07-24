@@ -2,10 +2,10 @@ const express = require("express");
 const app = express();
 const morgan = require("morgan");
 const bodyParser = require("body-parser");
+const cors = require("cors");
 //require prisma client
 const prisma = require("./prisma/client");
 const { Client, Storage, ID, InputFile } = require("node-appwrite");
-const FormData = require("form-data");
 
 const multer = require("multer");
 const axios = require("axios");
@@ -22,16 +22,18 @@ const client = new Client()
 //routes
 const userRoute = require("./routes/userRoute");
 const fileRoute = require("./routes/fileRoute");
+const { authenticateToken } = require("./utils/jwtAuth");
 
 //middlewares
 app.use(morgan("dev"));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(express.json());
+app.use(cors());
 
 //api routes
 app.use("/api", userRoute);
-app.use("/api", fileRoute);
+app.use("/api", authenticateToken, fileRoute);
 
 const appwriteEndpoint = "https://cloud.appwrite.io/v1"; // Replace with your Appwrite API endpoint
 const appwriteProjectId = "64b76125ede8ab6b92ff"; // Replace with your Appwrite project ID
@@ -39,38 +41,5 @@ const appwriteProjectId = "64b76125ede8ab6b92ff"; // Replace with your Appwrite 
 const appwriteStorageBucketId = "64b76e54df9db91f5cf6"; // Replace with your Appwrite storage bucket ID
 
 const upload = multer({ dest: "uploads/" });
-
-app.post("/upload", upload.single("file"), async (req, res) => {
-  try {
-    // Check if the file exists in the request
-    if (!req.file) {
-      return res.status(400).json({ error: "No file provided" });
-    }
-
-    const fileData = req.file;
-    const fileName = fileData.originalname;
-    const filePath = fileData.path;
-
-    // Manually create a Blob object from the file buffer
-    const fileBlob = fs.readFileSync(filePath);
-
-    console.log(fileName, filePath, fileBlob);
-
-    const storage = new Storage(client);
-
-    const response = await storage.createFile(
-      appwriteStorageBucketId,
-      ID.unique(),
-      InputFile.fromPath(filePath, fileName)
-    );
-
-    fs.unlinkSync(filePath);
-
-    res.json({ success: true, response });
-  } catch (error) {
-    console.error("Error uploading file:", error);
-    res.status(500).json({ error: "File upload failed" });
-  }
-});
 
 module.exports = app;
